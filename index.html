@@ -2,96 +2,55 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Study Timer</title>
+<title>Desk Focus Timer</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
 body {
   margin: 0;
   background: #000;
-  color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #00ff66;
+  font-family: 'Orbitron', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  overflow: hidden;
 }
 
 .container {
   text-align: center;
   width: 100%;
-  max-width: 700px;
 }
 
-h1 {
-  font-weight: 400;
-  margin-bottom: 20px;
-  letter-spacing: 1px;
+.time {
+  font-size: 12vw;
+  letter-spacing: 0.1em;
+  text-shadow: 
+    0 0 10px #00ff66,
+    0 0 20px #00ff66,
+    0 0 40px #00ff66;
 }
 
-.mode-buttons,
-.duration-buttons,
 .controls {
-  margin: 15px 0;
+  margin-top: 40px;
 }
 
 button {
   background: #111;
-  border: 1px solid #333;
-  color: #fff;
-  padding: 12px 22px;
-  margin: 6px;
-  font-size: 16px;
-  border-radius: 10px;
-  transition: 0.2s;
+  border: 1px solid #00ff66;
+  color: #00ff66;
+  padding: 12px 25px;
+  margin: 10px;
+  font-size: 18px;
+  border-radius: 6px;
+  font-family: 'Orbitron', sans-serif;
 }
 
 button:hover {
-  background: #1a1a1a;
-}
-
-button.active {
-  border: 1px solid #00ffc3;
-  color: #00ffc3;
-}
-
-.timer-wrapper {
-  position: relative;
-  width: 340px;
-  height: 340px;
-  margin: 40px auto;
-}
-
-svg {
-  transform: rotate(-90deg);
-}
-
-circle {
-  fill: none;
-  stroke-width: 12;
-}
-
-.background {
-  stroke: #111;
-}
-
-.progress {
-  stroke: #00ffc3;
-  stroke-linecap: round;
-  transition: stroke-dashoffset 1s linear;
-}
-
-.time {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 48px;
-  font-weight: 300;
-  letter-spacing: 2px;
+  background: #00ff66;
+  color: black;
 }
 
 .hidden {
@@ -104,29 +63,12 @@ circle {
 
 <div class="container">
 
-<h1 id="modeTitle">Pomodoro Mode</h1>
+<div class="time" id="display">01:00:00</div>
 
-<div class="mode-buttons">
-  <button onclick="setMode('stopwatch')">Stopwatch</button>
-  <button class="active" onclick="setMode('pomodoro')">Pomodoro</button>
-</div>
-
-<div class="duration-buttons" id="durationButtons">
+<div class="controls" id="controls">
   <button onclick="setDuration(3600)">1 Hour</button>
   <button onclick="setDuration(7200)">2 Hours</button>
-</div>
-
-<div class="timer-wrapper">
-  <svg width="340" height="340">
-    <circle class="background" cx="170" cy="170" r="150"/>
-    <circle class="progress" cx="170" cy="170" r="150"
-      stroke-dasharray="942"
-      stroke-dashoffset="942"/>
-  </svg>
-  <div class="time" id="display">00:00:00</div>
-</div>
-
-<div class="controls">
+  <br>
   <button onclick="startTimer()">Start</button>
   <button onclick="pauseTimer()">Pause</button>
   <button onclick="resetTimer()">Reset</button>
@@ -136,24 +78,19 @@ circle {
 
 <script>
 
-let seconds = 0;
+let duration = 3600;
+let remaining = duration;
 let timer;
 let isRunning = false;
-let mode = "pomodoro";
-let duration = 3600; // default 1 hour
 let wakeLock = null;
 
 const display = document.getElementById("display");
-const progress = document.querySelector(".progress");
-const circumference = 2 * Math.PI * 150;
-
-progress.style.strokeDasharray = circumference;
-progress.style.strokeDashoffset = circumference;
+const controls = document.getElementById("controls");
 
 function updateDisplay() {
-  let hrs = Math.floor(seconds / 3600);
-  let mins = Math.floor((seconds % 3600) / 60);
-  let secs = seconds % 60;
+  let hrs = Math.floor(remaining / 3600);
+  let mins = Math.floor((remaining % 3600) / 60);
+  let secs = remaining % 60;
 
   display.textContent =
     String(hrs).padStart(2, '0') + ":" +
@@ -161,75 +98,50 @@ function updateDisplay() {
     String(secs).padStart(2, '0');
 }
 
-function updateProgress() {
-  if (mode === "pomodoro") {
-    let offset = circumference - (seconds / duration) * circumference;
-    progress.style.strokeDashoffset = offset;
-  }
+function setDuration(sec) {
+  duration = sec;
+  remaining = duration;
+  updateDisplay();
 }
 
 function startTimer() {
   if (isRunning) return;
   isRunning = true;
+  enterFullscreen();
   enableWakeLock();
-  enterCleanMode();
+  controls.classList.add("hidden");
 
   timer = setInterval(() => {
-    seconds++;
-
-    if (mode === "pomodoro" && seconds >= duration) {
+    if (remaining > 0) {
+      remaining--;
+      updateDisplay();
+    } else {
       clearInterval(timer);
-      alert("Session Complete 🔥");
       isRunning = false;
-      exitCleanMode();
+      alert("Session Complete 🔥");
+      controls.classList.remove("hidden");
     }
-
-    updateDisplay();
-    updateProgress();
   }, 1000);
 }
 
 function pauseTimer() {
   clearInterval(timer);
   isRunning = false;
-  exitCleanMode();
+  controls.classList.remove("hidden");
 }
 
 function resetTimer() {
   clearInterval(timer);
   isRunning = false;
-  seconds = 0;
+  remaining = duration;
   updateDisplay();
-  progress.style.strokeDashoffset = circumference;
-  exitCleanMode();
+  controls.classList.remove("hidden");
 }
 
-function setMode(selected) {
-  resetTimer();
-  mode = selected;
-  document.getElementById("modeTitle").textContent =
-    selected === "stopwatch" ? "Stopwatch Mode" : "Pomodoro Mode";
-
-  document.getElementById("durationButtons").style.display =
-    selected === "pomodoro" ? "block" : "none";
-}
-
-function setDuration(sec) {
-  duration = sec;
-  seconds = 0;
-  updateDisplay();
-  progress.style.strokeDashoffset = circumference;
-}
-
-function enterCleanMode() {
-  document.querySelector(".mode-buttons").classList.add("hidden");
-  document.querySelector(".duration-buttons").classList.add("hidden");
-}
-
-function exitCleanMode() {
-  document.querySelector(".mode-buttons").classList.remove("hidden");
-  if (mode === "pomodoro") {
-    document.querySelector(".duration-buttons").classList.remove("hidden");
+function enterFullscreen() {
+  const elem = document.documentElement;
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
   }
 }
 
@@ -240,6 +152,8 @@ async function enableWakeLock() {
     console.log(err);
   }
 }
+
+updateDisplay();
 
 </script>
 
