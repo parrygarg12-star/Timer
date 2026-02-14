@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Marks Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root {
+  --bg: #f3eee6;
+  --text: #4b3f35;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: 'Inter', sans-serif;
+  color: var(--text);
+  padding: 40px;
+}
+
+h1 {
+  text-align: center;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+
+input, select, button {
+  padding: 10px;
+  margin: 8px;
+  font-size: 14px;
+}
+
+button {
+  border: 1px solid var(--text);
+  background: transparent;
+  color: var(--text);
+}
+
+button:hover {
+  background: var(--text);
+  color: var(--bg);
+}
+
+canvas {
+  margin-top: 40px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>Marks Progress Tracker</h1>
+
+<select id="subjectSelect"></select>
+<input type="text" id="newSubject" placeholder="New Subject">
+<button onclick="addSubject()">Add Subject</button>
+
+<br>
+
+<input type="text" id="examName" placeholder="Exam Name">
+<input type="number" id="totalMarks" placeholder="Total Marks">
+<input type="number" id="scoredMarks" placeholder="Scored Marks">
+<button onclick="addMarks()">Add Marks</button>
+
+<canvas id="progressChart"></canvas>
+
+</div>
+
+<script>
+let subjects = JSON.parse(localStorage.getItem("subjects")) || {};
+let currentSubject = null;
+let chart;
+
+function saveData() {
+  localStorage.setItem("subjects", JSON.stringify(subjects));
+}
+
+function populateSubjects() {
+  const select = document.getElementById("subjectSelect");
+  select.innerHTML = "";
+
+  Object.keys(subjects).forEach(sub => {
+    let option = document.createElement("option");
+    option.value = sub;
+    option.textContent = sub;
+    select.appendChild(option);
+  });
+
+  if (Object.keys(subjects).length > 0) {
+    currentSubject = select.value;
+    renderChart();
+  }
+}
+
+function addSubject() {
+  const name = document.getElementById("newSubject").value;
+  if (!name) return;
+
+  subjects[name] = [];
+  document.getElementById("newSubject").value = "";
+  saveData();
+  populateSubjects();
+}
+
+function addMarks() {
+  if (!currentSubject) return;
+
+  const exam = document.getElementById("examName").value;
+  const total = parseFloat(document.getElementById("totalMarks").value);
+  const scored = parseFloat(document.getElementById("scoredMarks").value);
+
+  if (!exam || !total || !scored) return;
+
+  const percent = ((scored / total) * 100).toFixed(2);
+
+  subjects[currentSubject].push({
+    exam,
+    percent
+  });
+
+  document.getElementById("examName").value = "";
+  document.getElementById("totalMarks").value = "";
+  document.getElementById("scoredMarks").value = "";
+
+  saveData();
+  renderChart();
+}
+
+document.getElementById("subjectSelect").addEventListener("change", function() {
+  currentSubject = this.value;
+  renderChart();
+});
+
+function renderChart() {
+  if (!currentSubject) return;
+
+  const exams = subjects[currentSubject].map(e => e.exam);
+  const percents = subjects[currentSubject].map(e => e.percent);
+
+  const ctx = document.getElementById("progressChart").getContext("2d");
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: exams,
+      datasets: [{
+        label: "Percentage",
+        data: percents,
+        borderColor: "#4b3f35",
+        tension: 0.3
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          min: 0,
+          max: 100
+        }
+      }
+    }
+  });
+}
+
+populateSubjects();
+</script>
+
+</body>
+</html>
