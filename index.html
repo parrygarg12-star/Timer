@@ -2,21 +2,20 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Desk Focus Timer</title>
+<title>Focus Timer</title>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
 
 body {
   margin: 0;
-  background: #000;
-  color: #00ff66;
-  font-family: 'Orbitron', sans-serif;
+  background: #f2efe9;
+  color: #1a1a1a;
+  font-family: 'Inter', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  overflow: hidden;
 }
 
 .container {
@@ -25,36 +24,42 @@ body {
 }
 
 .time {
-  font-size: 12vw;
-  letter-spacing: 0.1em;
-  text-shadow: 
-    0 0 10px #00ff66,
-    0 0 20px #00ff66,
-    0 0 40px #00ff66;
+  font-size: 14vw;
+  font-weight: 700;
+  letter-spacing: -2px;
+}
+
+.label {
+  margin-top: 10px;
+  font-size: 18px;
+  color: #555;
+  letter-spacing: 2px;
 }
 
 .controls {
-  margin-top: 40px;
+  margin-top: 60px;
+  transition: opacity 0.4s ease;
 }
 
 button {
-  background: #111;
-  border: 1px solid #00ff66;
-  color: #00ff66;
-  padding: 12px 25px;
+  background: transparent;
+  border: 1px solid #1a1a1a;
+  color: #1a1a1a;
+  padding: 14px 28px;
   margin: 10px;
-  font-size: 18px;
-  border-radius: 6px;
-  font-family: 'Orbitron', sans-serif;
+  font-size: 16px;
+  border-radius: 8px;
+  font-family: 'Inter', sans-serif;
 }
 
 button:hover {
-  background: #00ff66;
-  color: black;
+  background: #1a1a1a;
+  color: #f2efe9;
 }
 
 .hidden {
-  display: none;
+  opacity: 0;
+  pointer-events: none;
 }
 </style>
 </head>
@@ -63,12 +68,10 @@ button:hover {
 
 <div class="container">
 
-<div class="time" id="display">01:00:00</div>
+<div class="time" id="display">00:00:00</div>
+<div class="label">FOCUS SESSION</div>
 
 <div class="controls" id="controls">
-  <button onclick="setDuration(3600)">1 Hour</button>
-  <button onclick="setDuration(7200)">2 Hours</button>
-  <br>
   <button onclick="startTimer()">Start</button>
   <button onclick="pauseTimer()">Pause</button>
   <button onclick="resetTimer()">Reset</button>
@@ -78,8 +81,7 @@ button:hover {
 
 <script>
 
-let duration = 3600;
-let remaining = duration;
+let seconds = 0;
 let timer;
 let isRunning = false;
 let wakeLock = null;
@@ -88,9 +90,9 @@ const display = document.getElementById("display");
 const controls = document.getElementById("controls");
 
 function updateDisplay() {
-  let hrs = Math.floor(remaining / 3600);
-  let mins = Math.floor((remaining % 3600) / 60);
-  let secs = remaining % 60;
+  let hrs = Math.floor(seconds / 3600);
+  let mins = Math.floor((seconds % 3600) / 60);
+  let secs = seconds % 60;
 
   display.textContent =
     String(hrs).padStart(2, '0') + ":" +
@@ -98,29 +100,17 @@ function updateDisplay() {
     String(secs).padStart(2, '0');
 }
 
-function setDuration(sec) {
-  duration = sec;
-  remaining = duration;
-  updateDisplay();
-}
-
 function startTimer() {
   if (isRunning) return;
   isRunning = true;
+
   enterFullscreen();
   enableWakeLock();
   controls.classList.add("hidden");
 
   timer = setInterval(() => {
-    if (remaining > 0) {
-      remaining--;
-      updateDisplay();
-    } else {
-      clearInterval(timer);
-      isRunning = false;
-      alert("Session Complete 🔥");
-      controls.classList.remove("hidden");
-    }
+    seconds++;
+    updateDisplay();
   }, 1000);
 }
 
@@ -133,7 +123,7 @@ function pauseTimer() {
 function resetTimer() {
   clearInterval(timer);
   isRunning = false;
-  remaining = duration;
+  seconds = 0;
   updateDisplay();
   controls.classList.remove("hidden");
 }
