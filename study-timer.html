@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Study Timer</title>
+<style>
+body {
+  margin: 0;
+  background: black;
+  color: white;
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+h1 {
+  font-weight: normal;
+}
+
+.timer-container {
+  position: relative;
+  width: 260px;
+  height: 260px;
+}
+
+svg {
+  transform: rotate(-90deg);
+}
+
+circle {
+  fill: none;
+  stroke-width: 10;
+}
+
+.background {
+  stroke: #222;
+}
+
+.progress {
+  stroke: #00ffcc;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.time {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+}
+
+.buttons {
+  margin-top: 30px;
+}
+
+button {
+  background: #111;
+  border: 1px solid #444;
+  color: white;
+  padding: 10px 18px;
+  margin: 5px;
+  font-size: 16px;
+  border-radius: 8px;
+}
+
+button:hover {
+  background: #222;
+}
+
+.mode-toggle {
+  margin-bottom: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<h1 id="modeTitle">Stopwatch Mode</h1>
+
+<div class="mode-toggle">
+  <button onclick="setMode('stopwatch')">Stopwatch</button>
+  <button onclick="setMode('pomodoro')">Pomodoro</button>
+</div>
+
+<div class="timer-container">
+  <svg width="260" height="260">
+    <circle class="background" cx="130" cy="130" r="110"/>
+    <circle class="progress" cx="130" cy="130" r="110"
+      stroke-dasharray="690"
+      stroke-dashoffset="690"/>
+  </svg>
+  <div class="time" id="display">00:00:00</div>
+</div>
+
+<div class="buttons">
+  <button onclick="startTimer()">Start</button>
+  <button onclick="pauseTimer()">Pause</button>
+  <button onclick="resetTimer()">Reset</button>
+</div>
+
+<script>
+let timer;
+let seconds = 0;
+let isRunning = false;
+let mode = "stopwatch";
+let isWorkSession = true;
+
+const display = document.getElementById("display");
+const progress = document.querySelector(".progress");
+const circumference = 2 * Math.PI * 110;
+
+progress.style.strokeDasharray = circumference;
+progress.style.strokeDashoffset = circumference;
+
+function updateDisplay() {
+  let hrs = Math.floor(seconds / 3600);
+  let mins = Math.floor((seconds % 3600) / 60);
+  let secs = seconds % 60;
+
+  display.textContent =
+    String(hrs).padStart(2, '0') + ":" +
+    String(mins).padStart(2, '0') + ":" +
+    String(secs).padStart(2, '0');
+}
+
+function updateProgress() {
+  if (mode === "pomodoro") {
+    let total = isWorkSession ? 1500 : 300;
+    let offset = circumference - (seconds / total) * circumference;
+    progress.style.strokeDashoffset = offset;
+  }
+}
+
+function startTimer() {
+  if (isRunning) return;
+  isRunning = true;
+
+  timer = setInterval(() => {
+    seconds++;
+
+    if (mode === "pomodoro") {
+      let total = isWorkSession ? 1500 : 300;
+
+      if (seconds >= total) {
+        seconds = 0;
+        isWorkSession = !isWorkSession;
+        alert(isWorkSession ? "Work Time!" : "Break Time!");
+      }
+    }
+
+    updateDisplay();
+    updateProgress();
+  }, 1000);
+}
+
+function pauseTimer() {
+  clearInterval(timer);
+  isRunning = false;
+}
+
+function resetTimer() {
+  clearInterval(timer);
+  isRunning = false;
+  seconds = 0;
+  updateDisplay();
+  progress.style.strokeDashoffset = circumference;
+}
+
+function setMode(selected) {
+  resetTimer();
+  mode = selected;
+  document.getElementById("modeTitle").textContent =
+    selected === "stopwatch" ? "Stopwatch Mode" : "Pomodoro Mode";
+}
+</script>
+
+</body>
+</html>
