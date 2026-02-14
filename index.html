@@ -1,65 +1,79 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Focus Timer</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap');
+:root {
+  --bg: #f3eee6;
+  --text: #4b3f35;
+  --muted: #8c8075;
+}
+
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
-  background: #f2efe9;
-  color: #1a1a1a;
+  background: var(--bg);
   font-family: 'Inter', sans-serif;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
+  overflow: hidden;
 }
 
 .container {
   text-align: center;
   width: 100%;
+  max-width: 1200px;
 }
 
 .time {
-  font-size: 14vw;
-  font-weight: 700;
-  letter-spacing: -2px;
+  font-size: clamp(80px, 14vw, 220px);
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -4px;
 }
 
 .label {
-  margin-top: 10px;
+  margin-top: 20px;
   font-size: 18px;
-  color: #555;
-  letter-spacing: 2px;
+  letter-spacing: 4px;
+  color: var(--muted);
 }
 
 .controls {
-  margin-top: 60px;
+  margin-top: 70px;
+  opacity: 1;
   transition: opacity 0.4s ease;
+}
+
+.controls.fade {
+  opacity: 0;
+  pointer-events: none;
 }
 
 button {
   background: transparent;
-  border: 1px solid #1a1a1a;
-  color: #1a1a1a;
-  padding: 14px 28px;
+  border: 1px solid var(--text);
+  color: var(--text);
+  padding: 14px 32px;
   margin: 10px;
   font-size: 16px;
   border-radius: 8px;
   font-family: 'Inter', sans-serif;
+  transition: 0.2s ease;
 }
 
 button:hover {
-  background: #1a1a1a;
-  color: #f2efe9;
-}
-
-.hidden {
-  opacity: 0;
-  pointer-events: none;
+  background: var(--text);
+  color: var(--bg);
 }
 </style>
 </head>
@@ -72,9 +86,9 @@ button:hover {
 <div class="label">FOCUS SESSION</div>
 
 <div class="controls" id="controls">
-  <button onclick="startTimer()">Start</button>
-  <button onclick="pauseTimer()">Pause</button>
-  <button onclick="resetTimer()">Reset</button>
+  <button onclick="startTimer(event)">Start</button>
+  <button onclick="pauseTimer(event)">Pause</button>
+  <button onclick="resetTimer(event)">Reset</button>
 </div>
 
 </div>
@@ -82,7 +96,7 @@ button:hover {
 <script>
 
 let seconds = 0;
-let timer;
+let timer = null;
 let isRunning = false;
 let wakeLock = null;
 
@@ -90,9 +104,9 @@ const display = document.getElementById("display");
 const controls = document.getElementById("controls");
 
 function updateDisplay() {
-  let hrs = Math.floor(seconds / 3600);
-  let mins = Math.floor((seconds % 3600) / 60);
-  let secs = seconds % 60;
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
 
   display.textContent =
     String(hrs).padStart(2, '0') + ":" +
@@ -100,13 +114,14 @@ function updateDisplay() {
     String(secs).padStart(2, '0');
 }
 
-function startTimer() {
+function startTimer(e) {
+  e.stopPropagation();
   if (isRunning) return;
   isRunning = true;
 
   enterFullscreen();
   enableWakeLock();
-  controls.classList.add("hidden");
+  autoHideControls();
 
   timer = setInterval(() => {
     seconds++;
@@ -114,19 +129,36 @@ function startTimer() {
   }, 1000);
 }
 
-function pauseTimer() {
+function pauseTimer(e) {
+  e.stopPropagation();
   clearInterval(timer);
   isRunning = false;
-  controls.classList.remove("hidden");
+  controls.classList.remove("fade");
 }
 
-function resetTimer() {
+function resetTimer(e) {
+  e.stopPropagation();
   clearInterval(timer);
   isRunning = false;
   seconds = 0;
   updateDisplay();
-  controls.classList.remove("hidden");
+  controls.classList.remove("fade");
 }
+
+function autoHideControls() {
+  controls.classList.add("fade");
+}
+
+function showControls() {
+  controls.classList.remove("fade");
+  if (isRunning) {
+    setTimeout(() => {
+      controls.classList.add("fade");
+    }, 3000);
+  }
+}
+
+document.body.addEventListener("click", showControls);
 
 function enterFullscreen() {
   const elem = document.documentElement;
